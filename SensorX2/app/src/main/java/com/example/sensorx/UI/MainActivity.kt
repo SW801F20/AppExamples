@@ -6,6 +6,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,12 +20,21 @@ import java.lang.StringBuilder
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var mSensorManager: SensorManager
-    private var mSensors: Sensor? = null
-    private var number = 0
+    private var mMagneticFiled: Sensor? = null
+    private var mAcclerometer : Sensor? = null
+    private var mGravity: Sensor? = null
+    private var mGyroscope: Sensor? = null
     lateinit var factory: MainActivityViewModelFactory
     lateinit var viewModel : MainActivityViewModel
 
     private fun initializeUi(){
+        //display all sensors under the verbose category in the Log with SensorName tag
+        lateinit var sensorManager: SensorManager
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val deviceSensors: List<Sensor> = sensorManager.getSensorList(Sensor.TYPE_ALL)
+        for (sensor in deviceSensors){
+            Log.v("SensorName", sensor.name)
+        }
 
         factory = InjectorUtils.provideMainActivityViewModelFactory()
         viewModel = ViewModelProvider(this, factory).get(MainActivityViewModel::class.java)
@@ -33,7 +43,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             sensorValues?.forEach { sensorValue ->
                 stringBuilder.append("$sensorValue\n\n")
             }
-            fredag.text = stringBuilder.toString()
+            theTextView.text = stringBuilder.toString()
         })
     }
 
@@ -43,22 +53,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         initializeUi()
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 //        Define the sensor
-        mSensors = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-
-
+        mMagneticFiled = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) //mSensors here determines which sensors are registered listeners
+        mAcclerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     }
 
     override fun onSensorChanged(p0: SensorEvent) {
-
-        var sensorValue = SensorValue(p0.sensor.toString(), p0.values[0].toString())
+        var sensorValue = SensorValue(p0.sensor.name, p0.values[0].toString())
         viewModel.addSensorValue(sensorValue)
-        var millibarsOfPressure = p0!!.values[0]
-        if (p0.sensor.type == Sensor.TYPE_LIGHT)
-            Toast.makeText(this, "" + millibarsOfPressure + " lx", Toast.LENGTH_SHORT).show()
-
-        if (p0.sensor.type == Sensor.TYPE_ROTATION_VECTOR)
-            Log.v("SensorChanged", ""+ p0.sensor.toString())
-
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
@@ -67,7 +70,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onResume(){
         super.onResume()
-        mSensorManager.registerListener(this, mSensors, SensorManager.SENSOR_DELAY_NORMAL)
+        val sampling = 10000000
+        mSensorManager.registerListener(this, mMagneticFiled, sampling, sampling)
+        mSensorManager.registerListener(this, mAcclerometer, sampling, sampling)
+        mSensorManager.registerListener(this, mGyroscope, sampling, sampling)
+        mSensorManager.registerListener(this, mGravity, sampling, sampling)
 
     }
 
