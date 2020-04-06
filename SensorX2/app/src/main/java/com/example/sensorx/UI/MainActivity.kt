@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.SensorManager.SENSOR_DELAY_NORMAL
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -20,10 +21,7 @@ import java.lang.StringBuilder
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var mSensorManager: SensorManager
-    private var mMagneticFiled: Sensor? = null
-    private var mAcclerometer : Sensor? = null
-    private var mGravity: Sensor? = null
-    private var mGyroscope: Sensor? = null
+    private var mStepDetector: Sensor? = null
     lateinit var factory: MainActivityViewModelFactory
     lateinit var viewModel : MainActivityViewModel
 
@@ -35,6 +33,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         for (sensor in deviceSensors){
             Log.v("SensorName", sensor.name)
         }
+        Log.v("TheDevice", android.os.Build.MODEL);
+        Log.v("TheManufacturer", android.os.Build.MANUFACTURER);
 
         factory = InjectorUtils.provideMainActivityViewModelFactory()
         viewModel = ViewModelProvider(this, factory).get(MainActivityViewModel::class.java)
@@ -53,10 +53,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         initializeUi()
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 //        Define the sensor
-        mMagneticFiled = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) //mSensors here determines which sensors are registered listeners
-        mAcclerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
-        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        mStepDetector = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR) //mSensors here determines which sensors are registered listeners
     }
 
     override fun onSensorChanged(p0: SensorEvent) {
@@ -71,11 +68,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume(){
         super.onResume()
         val sampling = 10000000
-        mSensorManager.registerListener(this, mMagneticFiled, sampling, sampling)
-        mSensorManager.registerListener(this, mAcclerometer, sampling, sampling)
-        mSensorManager.registerListener(this, mGyroscope, sampling, sampling)
-        mSensorManager.registerListener(this, mGravity, sampling, sampling)
-
+        mSensorManager.registerListener(this, mStepDetector, SENSOR_DELAY_NORMAL);
     }
 
     override fun onPause(){
